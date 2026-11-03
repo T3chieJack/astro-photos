@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Astro Print</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style id="pageStyle">@page { size: 152.4mm 101.6mm; margin: 0; }</style>
+</head>
+<body>
+
+<main class="app">
+  <form class="sidebar" id="controls" autocomplete="off" onsubmit="return false">
+    <h1>Astro Print</h1>
+
+    <fieldset>
+      <legend>Photo</legend>
+      <div class="file-row">
+        <button type="button" id="open">Open…</button>
+        <span id="fileName" class="muted">No file</span>
+        <input type="file" id="file" accept="image/jpeg,image/png,image/webp" hidden>
+      </div>
+      <p class="error" id="notice" hidden></p>
+      <table class="meta" id="metaBox" hidden></table>
+    </fieldset>
+
+    <fieldset>
+      <legend>Caption</legend>
+      <label class="line">
+        <input type="checkbox" id="showSubject" checked> Subject
+      </label>
+      <input type="text" id="subject" aria-label="Subject">
+
+      <label class="line">
+        <input type="checkbox" id="showDate" checked> Date
+      </label>
+      <input type="text" id="date" aria-label="Date">
+
+      <label class="line">
+        <input type="checkbox" id="showMethod" checked> Equipment
+      </label>
+      <select id="preset" aria-label="Capture method">
+        <option value="">(no capture method)</option>
+        <option>Prime focus</option>
+        <option>Eyepiece projection</option>
+        <option>Afocal</option>
+        <option>Smart telescope</option>
+        <option>Camera on tracker</option>
+        <option>Stacked</option>
+      </select>
+      <input type="text" id="method" aria-label="Equipment">
+      <label class="line">
+        <input type="checkbox" id="procTag" checked> Include processing software
+      </label>
+    </fieldset>
+
+    <fieldset>
+      <legend>Caption style</legend>
+      <div class="grid">
+        <label for="corner">Position</label>
+        <select id="corner">
+          <option value="br">Bottom right</option>
+          <option value="bl">Bottom left</option>
+          <option value="tr">Top right</option>
+          <option value="tl">Top left</option>
+        </select>
+
+        <label for="face">Font</label>
+        <select id="face">
+          <option value="sans">Sans-serif</option>
+          <option value="serif">Serif</option>
+          <option value="mono">Monospace</option>
+        </select>
+
+        <label for="tone">Colour</label>
+        <select id="tone">
+          <option value="light">White</option>
+          <option value="dark">Black</option>
+        </select>
+
+        <label for="backing">Background</label>
+        <select id="backing">
+          <option value="soft">Shaded</option>
+          <option value="none">None</option>
+        </select>
+
+        <label for="pt">Size</label>
+        <span class="range"><input type="range" id="pt" min="5" max="14" step="0.5" value="7"><output id="ptVal"></output></span>
+
+        <label for="mm">Margin</label>
+        <span class="range"><input type="range" id="mm" min="2" max="15" step="0.5" value="4"><output id="mmVal"></output></span>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Paper</legend>
+      <div class="grid">
+        <label for="paper">Size</label>
+        <select id="paper"></select>
+
+        <label for="orient">Orientation</label>
+        <select id="orient">
+          <option value="landscape">Landscape</option>
+          <option value="portrait">Portrait</option>
+        </select>
+
+        <label for="fit">Framing</label>
+        <select id="fit">
+          <option value="fill">Fill</option>
+          <option value="fit">Fit</option>
+        </select>
+
+        <label for="dpi">Resolution</label>
+        <select id="dpi">
+          <option value="300">300 dpi</option>
+          <option value="600">600 dpi</option>
+        </select>
+
+        <label for="zoom">Zoom</label>
+        <span class="range"><input type="range" id="zoom" min="100" max="400" step="1" value="100"><output id="zoomVal"></output></span>
+      </div>
+      <div class="buttons">
+        <button type="button" id="rotate">Rotate</button>
+        <button type="button" id="recenter">Reset</button>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Printing</legend>
+      <label class="line">
+        <input type="checkbox" id="pause"> Wait between prints
+      </label>
+      <div class="grid" id="pauseField" hidden>
+        <label for="dry">Wait</label>
+        <span class="range"><input type="range" id="dry" min="15" max="600" step="15" value="90"><output id="dryVal"></output></span>
+      </div>
+      <p class="lock" id="lock" hidden>
+        <span id="lockMsg"></span>
+        <button type="button" id="unlock">Skip</button>
+      </p>
+    </fieldset>
+  </form>
+
+  <section class="preview" aria-label="Preview">
+    <div class="sheet" id="sheet">
+      <canvas id="preview" width="1800" height="1200"></canvas>
+      <div class="empty" id="empty">Open or drop a photo</div>
+    </div>
+    <div class="bar">
+      <span class="muted" id="info"></span>
+      <span class="buttons">
+        <button type="button" id="exportBtn" disabled>Save PNG</button>
+        <button type="button" id="printBtn" class="primary" disabled>Print</button>
+      </span>
+    </div>
+  </section>
+</main>
+
+<div class="dialog-bg" id="modal" hidden>
+  <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <h2 id="modalTitle">Print settings</h2>
+    <p>Use these settings in the print dialog:</p>
+    <table class="checklist" id="checklist"></table>
+    <label class="line"><input type="checkbox" id="skipChecklist"> Don't show again</label>
+    <div class="buttons end">
+      <button type="button" id="cancelPrint">Cancel</button>
+      <button type="button" id="goPrint" class="primary">Continue</button>
+    </div>
+  </div>
+</div>
+
+<div id="printSheet" aria-hidden="true"></div>
+
+<script src="js/metadata.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
